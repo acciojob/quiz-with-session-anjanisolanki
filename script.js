@@ -1,56 +1,66 @@
-//your JS code here.
+const questionsElement = document.getElementById("questions");
+const submitButton = document.getElementById("submit");
+const scoreElement = document.getElementById("score");
 
-// Do not change code below this line
-// This code will just display the questions to the screen
-const questions = [
-  {
-    question: "What is the capital of France?",
-    choices: ["Paris", "London", "Berlin", "Madrid"],
-    answer: "Paris",
-  },
-  {
-    question: "What is the highest mountain in the world?",
-    choices: ["Everest", "Kilimanjaro", "Denali", "Matterhorn"],
-    answer: "Everest",
-  },
-  {
-    question: "What is the largest country by area?",
-    choices: ["Russia", "China", "Canada", "United States"],
-    answer: "Russia",
-  },
-  {
-    question: "Which is the largest planet in our solar system?",
-    choices: ["Earth", "Jupiter", "Mars"],
-    answer: "Jupiter",
-  },
-  {
-    question: "What is the capital of Canada?",
-    choices: ["Toronto", "Montreal", "Vancouver", "Ottawa"],
-    answer: "Ottawa",
-  },
-];
+// 1. Initialize progress from Session Storage or an empty object
+let userAnswers = JSON.parse(sessionStorage.getItem("progress")) || {};
 
-// Display the quiz questions and choices
+// 2. Function to render the quiz
 function renderQuestions() {
-  for (let i = 0; i < questions.length; i++) {
-    const question = questions[i];
-    const questionElement = document.createElement("div");
-    const questionText = document.createTextNode(question.question);
-    questionElement.appendChild(questionText);
-    for (let j = 0; j < question.choices.length; j++) {
-      const choice = question.choices[j];
+  questionsElement.innerHTML = ""; // Clear existing
+  questions.forEach((q, index) => {
+    const questionDiv = document.createElement("div");
+    questionDiv.innerHTML = `<p>${q.question}</p>`;
+
+    q.choices.forEach((choice) => {
+      const isChecked = userAnswers[index] === choice ? "checked" : "";
       const choiceElement = document.createElement("input");
-      choiceElement.setAttribute("type", "radio");
-      choiceElement.setAttribute("name", `question-${i}`);
-      choiceElement.setAttribute("value", choice);
-      if (userAnswers[i] === choice) {
-        choiceElement.setAttribute("checked", true);
-      }
-      const choiceText = document.createTextNode(choice);
-      questionElement.appendChild(choiceElement);
-      questionElement.appendChild(choiceText);
-    }
-    questionsElement.appendChild(questionElement);
-  }
+      choiceElement.type = "radio";
+      choiceElement.name = `question-${index}`;
+      choiceElement.value = choice;
+      if (isChecked) choiceElement.checked = true;
+
+      // Event listener to save progress immediately
+      choiceElement.addEventListener("change", () => {
+        userAnswers[index] = choice;
+        sessionStorage.setItem("progress", JSON.stringify(userAnswers));
+      });
+
+      const label = document.createElement("label");
+      label.appendChild(choiceElement);
+      label.append(choice);
+      
+      questionDiv.appendChild(label);
+      questionDiv.appendChild(document.createElement("br"));
+    });
+    questionsElement.appendChild(questionDiv);
+  });
 }
+
+// 3. Function to calculate and display the score
+function calculateScore() {
+  let score = 0;
+  questions.forEach((q, index) => {
+    if (userAnswers[index] === q.answer) {
+      score++;
+    }
+  });
+
+  const scoreText = `Your score is ${score} out of 5.`;
+  scoreElement.textContent = scoreText;
+  
+  // Store final score in Local Storage
+  localStorage.setItem("score", score);
+}
+
+// 4. Persistence check: show previous score if it exists
+const lastScore = localStorage.getItem("score");
+if (lastScore !== null) {
+  scoreElement.textContent = `Your score is ${lastScore} out of 5.`;
+}
+
+// Event listener for submission
+submitButton.addEventListener("click", calculateScore);
+
+// Initial Render
 renderQuestions();
